@@ -36,11 +36,13 @@ export async function GET(req: Request) {
   ]);
 
   const total = totalAgg._sum.amount ?? 0;
-  const perCategory = byCategoryAgg.map((row) => {
+  const perCategory = byCategoryAgg.map(
+    (row: { category: string; _sum: { amount: unknown } }) => {
     const amount = row._sum.amount ?? 0;
     const pct = total === 0 ? 0 : Number(amount) / Number(total);
     return { category: row.category, amount, percentage: pct };
-  });
+    },
+  );
 
   return NextResponse.json({
     month: parsed.data.month,
