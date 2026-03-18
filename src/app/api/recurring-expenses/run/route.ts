@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     where: { userId: user.id, isActive: true },
   });
 
-  const created = await prisma.$transaction(async (tx) => {
+  // Explicitly type the transaction client to avoid implicit `any` in strict mode
+  const created = await prisma.$transaction(async (tx: any) => {
     const out: string[] = [];
 
     for (const rule of rules) {
