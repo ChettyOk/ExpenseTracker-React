@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
@@ -25,14 +26,18 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const sortBy = url.searchParams.get("sortBy") ?? "date";
-  const sortDir = url.searchParams.get("sortDir") ?? "desc";
+  const sortDirParam = url.searchParams.get("sortDir");
+  const sortDir: Prisma.SortOrder =
+    sortDirParam === "asc" ? "asc" : "desc";
 
-  const orderBy =
-    sortBy === "amount"
-      ? { amount: sortDir === "asc" ? "asc" : "desc" }
-      : sortBy === "category"
-        ? { category: sortDir === "asc" ? "asc" : "desc" }
-        : { date: sortDir === "asc" ? "asc" : "desc" };
+  let orderBy: Prisma.ExpenseOrderByWithRelationInput;
+  if (sortBy === "amount") {
+    orderBy = { amount: sortDir };
+  } else if (sortBy === "category") {
+    orderBy = { category: sortDir };
+  } else {
+    orderBy = { date: sortDir };
+  }
 
   const expenses = await prisma.expense.findMany({
     where: { userId: user.id },

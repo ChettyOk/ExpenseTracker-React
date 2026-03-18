@@ -5,18 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/apiAuth";
 import { monthBoundsUTC, yyyyMmNowLocal } from "@/lib/month";
 
-const bodySchema = z
-  .object({
-    month: z.string().regex(/^\d{4}-\d{2}$/).optional(), // YYYY-MM
-  })
-  .optional();
+const bodySchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/).optional(), // YYYY-MM
+});
 
 export async function POST(req: Request) {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => undefined);
-  const parsed = bodySchema ? bodySchema.safeParse(body) : { success: true, data: {} };
+  const parsed = bodySchema.safeParse(body ?? {});
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request", details: parsed.error.flatten() },
