@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  const curMap = new Map(
+  const curMap = new Map<string, number>(
     cur.map(
       (r: { category: string; _sum: { amount: unknown } }) => [
         r.category,
@@ -46,7 +46,7 @@ export async function GET(req: Request) {
       ],
     ),
   );
-  const prevMap = new Map(
+  const prevMap = new Map<string, number>(
     prevAgg.map(
       (r: { category: string; _sum: { amount: unknown } }) => [
         r.category,
