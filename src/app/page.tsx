@@ -10,7 +10,7 @@ export default async function Home() {
     redirect("/login");
   }
 
-    const role = (session.user as { role?: string }).role;
+  const role = (session.user as { role?: string }).role;
 
   if (role === "ADMIN") {
     redirect("/admin");
