@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 import { requireAdmin } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
@@ -32,8 +33,19 @@ export async function GET() {
     },
   });
 
+  type UserRow = Prisma.UserGetPayload<{
+    select: {
+      id: true;
+      email: true;
+      name: true;
+      role: true;
+      createdAt: true;
+      _count: { select: { expenses: true; recurringExpenses: true } };
+    };
+  }>;
+
   return NextResponse.json({
-    users: users.map((u) => ({
+    users: (users as UserRow[]).map((u) => ({
       id: u.id,
       email: u.email,
       name: u.name,
