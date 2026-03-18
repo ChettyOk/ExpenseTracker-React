@@ -15,8 +15,8 @@ export async function GET() {
     }),
     prisma.expense.groupBy({
       by: ["category"],
-      _count: { _all: true },
-      orderBy: { _count: { _all: "desc" } },
+      _count: { category: true },
+      orderBy: { _count: { category: "desc" } },
     }),
   ]);
 
