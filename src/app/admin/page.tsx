@@ -9,7 +9,10 @@ export default async function AdminPage() {
   if (!admin) redirect("/login?callbackUrl=/admin");
 
   return (
-    <AdminShell>
+    <AdminShell
+      title="Admin – Users"
+      description="Manage users (create, edit, delete)."
+    >
       <AdminUsers />
     </AdminShell>
   );

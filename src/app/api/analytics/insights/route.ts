@@ -38,8 +38,22 @@ export async function GET(req: Request) {
     }),
   ]);
 
-  const curMap = new Map(cur.map((r) => [r.category, Number(r._sum.amount ?? 0)]));
-  const prevMap = new Map(prevAgg.map((r) => [r.category, Number(r._sum.amount ?? 0)]));
+  const curMap = new Map<string, number>(
+    cur.map(
+      (r: { category: string; _sum: { amount: unknown } }) => [
+        r.category,
+        Number(r._sum.amount ?? 0),
+      ],
+    ),
+  );
+  const prevMap = new Map<string, number>(
+    prevAgg.map(
+      (r: { category: string; _sum: { amount: unknown } }) => [
+        r.category,
+        Number(r._sum.amount ?? 0),
+      ],
+    ),
+  );
 
   const categories = [
     "FOOD",

@@ -1,19 +1,32 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import AdminNav from "./AdminNav";
 
-export default function AdminShell({ children }: { children: React.ReactNode }) {
+type AdminShellProps = {
+  children: React.ReactNode;
+  title?: string;
+  description?: string;
+};
+
+export default function AdminShell({
+  children,
+  title = "Admin",
+  description,
+}: AdminShellProps) {
   return (
     <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-              Admin – Users
+              {title}
             </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Manage users (create, edit, delete).
-            </p>
+            {description && (
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                {description}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <a
@@ -31,6 +44,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             </button>
           </div>
         </div>
+        <AdminNav />
         {children}
       </div>
     </div>
