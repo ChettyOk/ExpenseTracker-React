@@ -1,7 +1,8 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+
+import AppShell from "@/components/AppShell";
 
 type Profile = {
   email: string;
@@ -72,51 +73,36 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-black">
+      <AppShell
+        contentMaxWidth="max-w-xl"
+        title="Profile settings"
+        description="Update your name or change your password."
+      >
         <p className="text-sm text-zinc-600 dark:text-zinc-300">Loading profile…</p>
-      </div>
+      </AppShell>
     );
   }
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-black">
+      <AppShell
+        contentMaxWidth="max-w-xl"
+        title="Profile settings"
+        description="Update your name or change your password."
+      >
         <p className="text-sm text-red-600 dark:text-red-400">
           {error ?? "Unable to load profile."}
         </p>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-10 dark:bg-black">
-      <main className="mx-auto w-full max-w-xl space-y-6">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Profile settings
-            </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Update your name or change your password.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <a
-              href="/dashboard"
-              className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              Back
-            </a>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-xl bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Log out
-            </button>
-          </div>
-        </header>
-
+    <AppShell
+      contentMaxWidth="max-w-xl"
+      title="Profile settings"
+      description="Update your name or change your password."
+    >
         <section className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
           <form className="space-y-4" onSubmit={onSubmit}>
             <div>
@@ -185,8 +171,7 @@ export default function ProfilePage() {
             </button>
           </form>
         </section>
-      </main>
-    </div>
+    </AppShell>
   );
 }
 

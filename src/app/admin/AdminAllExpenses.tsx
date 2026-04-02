@@ -39,33 +39,51 @@ export default function AdminAllExpenses() {
   const [category, setCategory] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const PAGE = 200;
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const params = new URLSearchParams();
-    if (userId) params.set("userId", userId);
-    if (category) params.set("category", category);
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
-    const [uRes, eRes] = await Promise.all([
-      fetch("/api/admin/users"),
-      fetch(`/api/admin/expenses?${params.toString()}`),
-    ]);
-    if (!uRes.ok || !eRes.ok) {
-      setError("Failed to load data.");
+  const load = useCallback(
+    async (off: number) => {
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.set("limit", String(PAGE));
+      params.set("offset", String(off));
+      if (userId) params.set("userId", userId);
+      if (category) params.set("category", category);
+      if (from) params.set("from", from);
+      if (to) params.set("to", to);
+      const [uRes, eRes] = await Promise.all([
+        fetch("/api/admin/users"),
+        fetch(`/api/admin/expenses?${params.toString()}`),
+      ]);
+      if (!uRes.ok || !eRes.ok) {
+        setError("Failed to load data.");
+        setLoading(false);
+        return;
+      }
+      const uData = (await uRes.json()) as {
+        users: { id: string; email: string; name: string | null }[];
+      };
+      const eData = (await eRes.json()) as {
+        expenses: ExpenseRow[];
+        totalCount: number;
+        offset: number;
+      };
+      setUsers(
+        uData.users.map((u) => ({ id: u.id, email: u.email, name: u.name })),
+      );
+      setExpenses(eData.expenses);
+      setTotalCount(eData.totalCount);
+      setOffset(eData.offset);
       setLoading(false);
-      return;
-    }
-    const uData = (await uRes.json()) as { users: UserOption[] };
-    const eData = (await eRes.json()) as { expenses: ExpenseRow[] };
-    setUsers(uData.users);
-    setExpenses(eData.expenses);
-    setLoading(false);
-  }, [userId, category, from, to]);
+    },
+    [userId, category, from, to],
+  );
 
   useEffect(() => {
-    void load();
+    void load(0);
   }, [load]);
 
   return (
@@ -194,6 +212,32 @@ export default function AdminAllExpenses() {
             </tbody>
           </table>
         </div>
+        {!loading && totalCount > PAGE ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800">
+            <span className="text-zinc-600 dark:text-zinc-400">
+              {totalCount === 0 ? 0 : offset + 1}–{Math.min(offset + expenses.length, totalCount)} of{" "}
+              {totalCount.toLocaleString()}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={offset === 0}
+                className="rounded border border-zinc-300 px-3 py-1 text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                onClick={() => void load(Math.max(0, offset - PAGE))}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={offset + PAGE >= totalCount}
+                className="rounded border border-zinc-300 px-3 py-1 text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                onClick={() => void load(offset + PAGE)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

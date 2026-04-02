@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import AppShell from "@/components/AppShell";
+
 type ExpenseCategory =
   | "FOOD"
   | "RENT"
@@ -118,25 +120,11 @@ export default function RecurringClient() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-10 dark:bg-black">
-      <main className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Recurring expenses
-            </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Create monthly recurring rules and generate this month’s expenses.
-            </p>
-          </div>
-          <a
-            className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-            href="/dashboard"
-          >
-            Back to dashboard
-          </a>
-        </header>
-
+    <AppShell
+      contentMaxWidth="max-w-5xl"
+      title="Recurring expenses"
+      description="Create monthly recurring rules and generate this month’s expenses."
+    >
         <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-950 sm:p-6">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
             Add recurring rule
@@ -311,8 +299,6 @@ export default function RecurringClient() {
             </table>
           </div>
         </section>
-      </main>
-    </div>
+    </AppShell>
   );
 }
-

@@ -26,6 +26,24 @@ export function monthBoundsUTC(yyyyMm: string) {
   return { from, to, y, m };
 }
 
+/**
+ * Half-open calendar month as YYYY-MM-DD strings for PostgreSQL `DATE` filters.
+ * Matches how imports and the expense list store day-level dates (no timezone shift).
+ */
+export function monthCalendarDateRange(yyyyMm: string): {
+  start: string;
+  endExclusive: string;
+} {
+  assertYYYYMM(yyyyMm);
+  const y = Number(yyyyMm.slice(0, 4));
+  const mo = Number(yyyyMm.slice(5, 7));
+  const start = `${yyyyMm}-01`;
+  const ny = mo === 12 ? y + 1 : y;
+  const nm = mo === 12 ? 1 : mo + 1;
+  const endExclusive = `${ny}-${String(nm).padStart(2, "0")}-01`;
+  return { start, endExclusive };
+}
+
 export function prevYYYYMM(yyyyMm: string) {
   assertYYYYMM(yyyyMm);
   const [y, m] = yyyyMm.split("-").map(Number);

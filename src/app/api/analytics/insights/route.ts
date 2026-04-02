@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/apiAuth";
-import { daysInUTCMonth, monthBoundsUTC, prevYYYYMM } from "@/lib/month";
+import {
+  daysInUTCMonth,
+  monthBoundsUTC,
+  monthCalendarDateRange,
+  prevYYYYMM,
+} from "@/lib/month";
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
@@ -22,37 +28,34 @@ export async function GET(req: Request) {
   const month = parsed.data.month;
   const prev = prevYYYYMM(month);
 
-  const { from, to, y, m } = monthBoundsUTC(month);
-  const prevBounds = monthBoundsUTC(prev);
+  const { y, m } = monthBoundsUTC(month);
+  const curRange = monthCalendarDateRange(month);
+  const prevRange = monthCalendarDateRange(prev);
 
   const [cur, prevAgg] = await Promise.all([
-    prisma.expense.groupBy({
-      by: ["category"],
-      where: { userId: user.id, date: { gte: from, lt: to } },
-      _sum: { amount: true },
-    }),
-    prisma.expense.groupBy({
-      by: ["category"],
-      where: { userId: user.id, date: { gte: prevBounds.from, lt: prevBounds.to } },
-      _sum: { amount: true },
-    }),
+    prisma.$queryRaw<{ category: string; amount: Prisma.Decimal | null }[]>`
+      SELECT "category", COALESCE(SUM("amount"), 0)::decimal AS amount
+      FROM "Expense"
+      WHERE "userId" = ${user.id}
+        AND "date" >= ${curRange.start}::date
+        AND "date" < ${curRange.endExclusive}::date
+      GROUP BY "category"
+    `,
+    prisma.$queryRaw<{ category: string; amount: Prisma.Decimal | null }[]>`
+      SELECT "category", COALESCE(SUM("amount"), 0)::decimal AS amount
+      FROM "Expense"
+      WHERE "userId" = ${user.id}
+        AND "date" >= ${prevRange.start}::date
+        AND "date" < ${prevRange.endExclusive}::date
+      GROUP BY "category"
+    `,
   ]);
 
   const curMap = new Map<string, number>(
-    cur.map(
-      (r: { category: string; _sum: { amount: unknown } }) => [
-        r.category,
-        Number(r._sum.amount ?? 0),
-      ],
-    ),
+    cur.map((r) => [r.category, Number(r.amount ?? 0)]),
   );
   const prevMap = new Map<string, number>(
-    prevAgg.map(
-      (r: { category: string; _sum: { amount: unknown } }) => [
-        r.category,
-        Number(r._sum.amount ?? 0),
-      ],
-    ),
+    prevAgg.map((r) => [r.category, Number(r.amount ?? 0)]),
   );
 
   const categories = [
@@ -96,12 +99,14 @@ export async function GET(req: Request) {
     insights.push(`Reducing subscription costs by 10% saves about $${savings.toFixed(2)} per year.`);
   }
 
-  return NextResponse.json({
-    month,
-    previousMonth: prev,
-    deltas,
-    forecast: { totalSoFar, dayOfMonth, daysInMonth: dim, endOfMonth: forecast },
-    insights,
-  });
+  return NextResponse.json(
+    {
+      month,
+      previousMonth: prev,
+      deltas,
+      forecast: { totalSoFar, dayOfMonth, daysInMonth: dim, endOfMonth: forecast },
+      insights,
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }
-

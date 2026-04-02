@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { signOut } from "next-auth/react";
 import AdminNav from "./AdminNav";
 
@@ -28,13 +29,13 @@ export default function AdminShell({
               </p>
             )}
           </div>
-          <div className="flex gap-2">
-            <a
+          <div className="flex flex-wrap gap-2">
+            <Link
               href="/dashboard"
               className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
-              Back to dashboard
-            </a>
+              User app
+            </Link>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
