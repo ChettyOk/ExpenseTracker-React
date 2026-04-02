@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/apiAuth";
-import { monthBoundsUTC } from "@/lib/month";
+import { monthCalendarDateRange } from "@/lib/month";
 
 const querySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/), // YYYY-MM
@@ -21,33 +22,43 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Invalid month (use YYYY-MM)" }, { status: 400 });
   }
 
-  const { from, to } = monthBoundsUTC(parsed.data.month);
+  const { start, endExclusive } = monthCalendarDateRange(parsed.data.month);
 
-  const [totalAgg, byCategoryAgg] = await Promise.all([
-    prisma.expense.aggregate({
-      where: { userId: user.id, date: { gte: from, lt: to } },
-      _sum: { amount: true },
-    }),
-    prisma.expense.groupBy({
-      by: ["category"],
-      where: { userId: user.id, date: { gte: from, lt: to } },
-      _sum: { amount: true },
-    }),
+  const [totalRow, byCategoryAgg] = await Promise.all([
+    prisma.$queryRaw<[{ total: Prisma.Decimal | null }]>`
+      SELECT COALESCE(SUM("amount"), 0)::decimal AS total
+      FROM "Expense"
+      WHERE "userId" = ${user.id}
+        AND "date" >= ${start}::date
+        AND "date" < ${endExclusive}::date
+    `,
+    prisma.$queryRaw<
+      { category: string; amount: Prisma.Decimal | null }[]
+    >`
+      SELECT "category", COALESCE(SUM("amount"), 0)::decimal AS amount
+      FROM "Expense"
+      WHERE "userId" = ${user.id}
+        AND "date" >= ${start}::date
+        AND "date" < ${endExclusive}::date
+      GROUP BY "category"
+    `,
   ]);
 
-  const total = totalAgg._sum.amount ?? 0;
-  const perCategory = byCategoryAgg.map(
-    (row: { category: string; _sum: { amount: unknown } }) => {
-    const amount = row._sum.amount ?? 0;
-    const pct = total === 0 ? 0 : Number(amount) / Number(total);
-    return { category: row.category, amount, percentage: pct };
-    },
-  );
+  const total = totalRow[0]?.total ?? 0;
+  const totalNum = Number(total);
+
+  const perCategory = byCategoryAgg.map((row) => {
+    const amount = row.amount ?? 0;
+    const amtNum = Number(amount);
+    const pct = totalNum === 0 ? 0 : amtNum / totalNum;
+    return { category: row.category, amount: amtNum, percentage: pct };
+  });
 
   return NextResponse.json({
     month: parsed.data.month,
-    total,
+    total: totalNum,
     perCategory,
+  }, {
+    headers: { "Cache-Control": "private, no-store" },
   });
 }
-

@@ -14,11 +14,16 @@ const categories = [
   "OTHER",
 ] as const;
 
+const DEFAULT_ADMIN_EXPENSE_LIMIT = 200;
+const MAX_ADMIN_EXPENSE_LIMIT = 2000;
+
 const querySchema = z.object({
   userId: z.string().optional(),
   category: z.enum(categories).optional(),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_ADMIN_EXPENSE_LIMIT).optional(),
+  offset: z.coerce.number().int().min(0).max(10_000_000).optional(),
 });
 
 export async function GET(req: Request) {
@@ -31,13 +36,17 @@ export async function GET(req: Request) {
     category: url.searchParams.get("category") ?? undefined,
     from: url.searchParams.get("from") ?? undefined,
     to: url.searchParams.get("to") ?? undefined,
+    limit: url.searchParams.get("limit") ?? undefined,
+    offset: url.searchParams.get("offset") ?? undefined,
   });
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid query" }, { status: 400 });
   }
 
-  const { userId, category, from, to } = parsed.data;
+  const { userId, category, from, to, limit: limitRaw, offset: offsetRaw } = parsed.data;
+  const take = limitRaw ?? DEFAULT_ADMIN_EXPENSE_LIMIT;
+  const skip = offsetRaw ?? 0;
 
   const where: {
     userId?: string;
@@ -52,11 +61,16 @@ export async function GET(req: Request) {
     if (to) where.date.lte = new Date(to);
   }
 
-  const expenses = await prisma.expense.findMany({
-    where,
-    orderBy: { date: "desc" },
-    include: { user: { select: { id: true, email: true, name: true } } },
-  });
+  const [expenses, totalCount] = await Promise.all([
+    prisma.expense.findMany({
+      where,
+      orderBy: { date: "desc" },
+      take,
+      skip,
+      include: { user: { select: { id: true, email: true, name: true } } },
+    }),
+    prisma.expense.count({ where }),
+  ]);
 
   return NextResponse.json({
     expenses: expenses.map((e) => ({
@@ -69,5 +83,8 @@ export async function GET(req: Request) {
       date: e.date.toISOString().slice(0, 10),
       description: e.description,
     })),
+    totalCount,
+    limit: take,
+    offset: skip,
   });
 }

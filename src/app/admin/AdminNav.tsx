@@ -16,8 +16,9 @@ export default function AdminNav() {
     <nav className="mb-6 flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900">
       {tabs.map((tab) => {
         const isActive =
-          pathname === tab.href ||
-          (tab.href !== "/admin" && pathname?.startsWith(tab.href));
+          tab.href === "/admin"
+            ? pathname === "/admin" || pathname?.startsWith("/admin/users")
+            : pathname === tab.href || pathname?.startsWith(`${tab.href}/`);
         return (
           <Link
             key={tab.href}

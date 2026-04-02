@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import AppShell from "@/components/AppShell";
+
 type ExpenseCategory =
   | "FOOD"
   | "RENT"
@@ -62,9 +64,10 @@ export default function SummaryClient() {
     setLoading(true);
     setError(null);
 
+    const fetchOpts = { cache: "no-store" as RequestCache };
     const [sRes, bRes] = await Promise.all([
-      fetch(`/api/analytics/monthly-summary?month=${month}`),
-      fetch(`/api/budgets?month=${month}`),
+      fetch(`/api/analytics/monthly-summary?month=${month}`, fetchOpts),
+      fetch(`/api/budgets?month=${month}`, fetchOpts),
     ]);
 
     if (!sRes.ok) {
@@ -129,47 +132,33 @@ export default function SummaryClient() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-10 dark:bg-black">
-      <main className="mx-auto w-full max-w-5xl space-y-6">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Monthly summary & budgets
-            </h1>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Totals by category, plus budget usage warnings at 80%.
-            </p>
-          </div>
-          <a
-            className="text-sm font-medium text-zinc-900 underline dark:text-zinc-50"
-            href="/dashboard"
+    <AppShell
+      contentMaxWidth="max-w-5xl"
+      title="Monthly summary & budgets"
+      description="Totals by category, plus budget usage warnings at 80%."
+      headerExtra={
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+          <label className="block">
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Month</span>
+            <input
+              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            />
+          </label>
+          <button
+            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            type="button"
+            onClick={() => void loadAll()}
+            disabled={loading}
           >
-            Back to dashboard
-          </a>
-        </header>
-
+            {loading ? "Loading..." : "Load"}
+          </button>
+        </div>
+      }
+    >
         <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-950 sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <label className="block">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Month (YYYY-MM)
-              </span>
-              <input
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-              />
-            </label>
-
-            <button
-              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
-              type="button"
-              onClick={loadAll}
-              disabled={loading}
-            >
-              {loading ? "Loading..." : "Load"}
-            </button>
-          </div>
 
           {error ? (
             <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
@@ -297,8 +286,7 @@ export default function SummaryClient() {
             })}
           </div>
         </section>
-      </main>
-    </div>
+    </AppShell>
   );
 }
 

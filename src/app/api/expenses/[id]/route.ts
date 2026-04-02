@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import type { Prisma } from "@prisma/client";
+
+import { normalizeExpenseDescription } from "@/lib/autoCategorize";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/apiAuth";
 
@@ -43,15 +46,46 @@ export async function PUT(
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const data: Prisma.ExpenseUpdateInput = {};
+  if (parsed.data.amount !== undefined) data.amount = parsed.data.amount;
+  if (parsed.data.category !== undefined) data.category = parsed.data.category;
+  if (parsed.data.date !== undefined) data.date = new Date(parsed.data.date);
+  if (parsed.data.description !== undefined) data.description = parsed.data.description;
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+
   const expense = await prisma.expense.update({
     where: { id },
-    data: {
-      amount: parsed.data.amount,
-      category: parsed.data.category,
-      date: parsed.data.date ? new Date(parsed.data.date) : undefined,
-      description: parsed.data.description,
-    },
+    data,
   });
+
+  if (parsed.data.category !== undefined) {
+    const desc =
+      parsed.data.description !== undefined
+        ? parsed.data.description
+        : existing.description;
+    if (desc != null && String(desc).trim()) {
+      const norm = normalizeExpenseDescription(String(desc)).slice(0, 500);
+      if (norm.length > 0) {
+        await prisma.categoryLearnedRule.upsert({
+          where: {
+            userId_normalizedDescription: {
+              userId: user.id,
+              normalizedDescription: norm,
+            },
+          },
+          create: {
+            userId: user.id,
+            normalizedDescription: norm,
+            category: parsed.data.category,
+          },
+          update: { category: parsed.data.category },
+        });
+      }
+    }
+  }
 
   return NextResponse.json({ expense });
 }

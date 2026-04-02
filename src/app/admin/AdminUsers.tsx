@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useCallback, useEffect, useState } from "react";
 
 type UserRow = {
@@ -343,6 +344,12 @@ export default function AdminUsers() {
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/users/${u.id}`}
+                          className="mr-3 text-sm text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+                        >
+                          View data
+                        </Link>
                         <button
                           type="button"
                           className="mr-2 text-zinc-600 underline hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"

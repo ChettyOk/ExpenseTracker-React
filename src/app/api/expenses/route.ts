@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import {
+  expenseOrderBy,
+  expenseWhereForUser,
+  parseExpenseListQuery,
+} from "@/lib/expenseQuery";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/apiAuth";
 
@@ -24,29 +29,38 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);
-  const sortBy = url.searchParams.get("sortBy") ?? "date";
-  const sortDirParam = url.searchParams.get("sortDir");
-  const sortDir = sortDirParam === "asc" ? "asc" : "desc";
+  const q = parseExpenseListQuery(url);
+  const orderBy = expenseOrderBy(q.sortBy, q.sortDir);
+  const where = expenseWhereForUser(user.id, q);
 
-  let orderBy:
-    | { amount: "asc" | "desc" }
-    | { category: "asc" | "desc" }
-    | { date: "asc" | "desc" };
+  const [expenses, totalCount, sumAgg] = await Promise.all([
+    prisma.expense.findMany({
+      where,
+      orderBy,
+      take: q.limit,
+      skip: q.offset,
+      select: {
+        id: true,
+        amount: true,
+        category: true,
+        date: true,
+        description: true,
+      },
+    }),
+    prisma.expense.count({ where }),
+    prisma.expense.aggregate({
+      where,
+      _sum: { amount: true },
+    }),
+  ]);
 
-  if (sortBy === "amount") {
-    orderBy = { amount: sortDir };
-  } else if (sortBy === "category") {
-    orderBy = { category: sortDir };
-  } else {
-    orderBy = { date: sortDir };
-  }
-
-  const expenses = await prisma.expense.findMany({
-    where: { userId: user.id },
-    orderBy,
+  return NextResponse.json({
+    expenses,
+    totalCount,
+    filteredTotalAmount: Number(sumAgg._sum.amount ?? 0),
+    limit: q.limit,
+    offset: q.offset,
   });
-
-  return NextResponse.json({ expenses });
 }
 
 export async function POST(req: Request) {
@@ -75,3 +89,13 @@ export async function POST(req: Request) {
   return NextResponse.json({ expense }, { status: 201 });
 }
 
+export async function DELETE() {
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const result = await prisma.expense.deleteMany({
+    where: { userId: user.id },
+  });
+
+  return NextResponse.json({ deleted: result.count });
+}
