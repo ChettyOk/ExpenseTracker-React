@@ -43,13 +43,24 @@ export default function AdminStats() {
 
   if (loading) {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">Loading system stats…</p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="ui-card">
+            <div className="ui-skeleton mb-3 h-4 w-24" />
+            <div className="ui-skeleton h-10 w-20" />
+          </div>
+        ))}
+        <div className="ui-card sm:col-span-2 lg:col-span-4">
+          <div className="ui-skeleton mb-3 h-4 w-40" />
+          <div className="ui-skeleton h-12 w-48" />
+        </div>
+      </div>
     );
   }
 
   if (error || !stats) {
     return (
-      <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+      <p className="rounded-xl border border-red-200/80 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/35 dark:text-red-200">
         {error ?? "Failed to load stats."}
       </p>
     );
@@ -57,45 +68,36 @@ export default function AdminStats() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Total users
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          {stats.totalUsers}
-        </div>
+      <div className="ui-card transition-shadow duration-200 hover:shadow-md">
+        <p className="ui-label-cap">Total users</p>
+        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-zinc-50">
+          {stats.totalUsers.toLocaleString()}
+        </p>
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Total expenses logged
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          {stats.totalExpenses}
-        </div>
+      <div className="ui-card transition-shadow duration-200 hover:shadow-md">
+        <p className="ui-label-cap">Expenses logged</p>
+        <p className="mt-3 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-zinc-50">
+          {stats.totalExpenses.toLocaleString()}
+        </p>
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Most popular category
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="ui-card transition-shadow duration-200 hover:shadow-md">
+        <p className="ui-label-cap">Top category</p>
+        <p className="mt-3 text-xl font-bold leading-snug text-slate-900 sm:text-2xl dark:text-zinc-50">
           {stats.mostPopularCategory ?? "—"}
-        </div>
+        </p>
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Avg spending per user
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="ui-card transition-shadow duration-200 hover:shadow-md">
+        <p className="ui-label-cap">Avg per user</p>
+        <p className="mt-3 text-2xl font-bold tabular-nums tracking-tight text-teal-700 dark:text-teal-300">
           {formatMoney(stats.averageSpendingPerUser)}
-        </div>
+        </p>
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900 sm:col-span-2 lg:col-span-4">
-        <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Total amount (all expenses)
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <div className="ui-card border-teal-200/60 bg-linear-to-br from-teal-50/50 to-[var(--surface-elevated)] sm:col-span-2 lg:col-span-4 dark:border-teal-900/40 dark:from-teal-950/20">
+        <p className="ui-label-cap">Total amount (all expenses)</p>
+        <p className="ui-muted mt-1 text-xs font-normal normal-case">Across every user in the system</p>
+        <p className="mt-4 text-4xl font-bold tabular-nums tracking-tight text-teal-800 sm:text-5xl dark:text-teal-200">
           {formatMoney(stats.totalAmount)}
-        </div>
+        </p>
       </div>
     </div>
   );

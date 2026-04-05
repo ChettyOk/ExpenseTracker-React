@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "@/components/AppShell";
+import { shiftCalendarMonth } from "@/lib/month";
 
 type ExpenseCategory =
   | "FOOD"
@@ -33,9 +35,17 @@ function formatMoney(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
+function formatMonthReadable(yyyyMm: string) {
+  const [y, m] = yyyyMm.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return yyyyMm;
+  const d = new Date(y, m - 1, 1);
+  if (Number.isNaN(d.getTime())) return yyyyMm;
+  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
+}
+
 export default function SummaryClient() {
   const [month, setMonth] = useState(yyyyMmNow());
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<{
     total: number;
@@ -131,66 +141,102 @@ export default function SummaryClient() {
     await loadAll();
   }
 
+  useEffect(() => {
+    void loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month]);
+
   return (
     <AppShell
       contentMaxWidth="max-w-5xl"
       title="Monthly summary & budgets"
       description="Totals by category, plus budget usage warnings at 80%."
       headerExtra={
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Month</span>
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              className="ui-btn-secondary !px-3 !py-2 transition active:scale-95"
+              onClick={() => setMonth((m) => shiftCalendarMonth(m, -1))}
+              aria-label="Previous month"
+            >
+              ‹
+            </button>
+            <span className="min-w-[11rem] text-center text-base font-bold tabular-nums text-slate-900 dark:text-zinc-100">
+              {formatMonthReadable(month)}
+            </span>
+            <button
+              type="button"
+              className="ui-btn-secondary !px-3 !py-2 transition active:scale-95"
+              onClick={() => setMonth((m) => shiftCalendarMonth(m, 1))}
+              aria-label="Next month"
+            >
+              ›
+            </button>
             <input
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              className="ui-input max-w-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
+              aria-label="Jump to month"
             />
-          </label>
+          </div>
           <button
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            className="ui-btn-secondary disabled:pointer-events-none disabled:opacity-50"
             type="button"
             onClick={() => void loadAll()}
             disabled={loading}
           >
-            {loading ? "Loading..." : "Load"}
+            {loading ? "Loading…" : "Refresh"}
           </button>
         </div>
       }
     >
-        <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-950 sm:p-6">
-
+        <section className="ui-card">
           {error ? (
-            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            <p className="rounded-xl border border-red-200/80 bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/35 dark:text-red-200">
               {error}
             </p>
           ) : null}
 
+          {loading && !summary ? (
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              <div className="ui-skeleton h-36 rounded-2xl" />
+              <div className="ui-skeleton h-36 rounded-2xl" />
+            </div>
+          ) : null}
+
           {summary ? (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                  Total spending
-                </h2>
-                <p className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-                  {formatMoney(summary.total)}
+            <div className="mt-2 grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-5 dark:border-zinc-800 dark:bg-zinc-900/35">
+                <p className="ui-label-cap">Total spending</p>
+                <p className="ui-muted mt-1 text-xs font-medium normal-case tracking-normal">
+                  {formatMonthReadable(month)}
                 </p>
+                <p className="ui-stat-hero ui-stat-hero-accent mt-3">{formatMoney(summary.total)}</p>
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                  Category breakdown
-                </h2>
-                <div className="mt-3 space-y-2">
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-5 dark:border-zinc-800 dark:bg-zinc-900/35">
+                <p className="ui-label-cap">Category breakdown</p>
+                <p className="ui-muted mt-1 text-xs font-medium normal-case tracking-normal">
+                  Share of spending
+                </p>
+                <div className="mt-4 space-y-2.5">
                   {categories.map((c) => {
                     const entry = summary.perCategory.find((x) => x.category === c.value);
                     const amt = entry?.amount ?? 0;
                     const pct = entry ? Math.round(entry.percentage * 100) : 0;
                     return (
-                      <div key={c.value} className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-700 dark:text-zinc-300">{c.label}</span>
-                        <span className="text-zinc-900 dark:text-zinc-50">
-                          {formatMoney(amt)} ({pct}%)
+                      <div
+                        key={c.value}
+                        className="flex items-center justify-between border-b border-slate-200/60 pb-2 text-sm last:border-0 dark:border-zinc-800"
+                      >
+                        <span className="text-slate-600 dark:text-zinc-400">{c.label}</span>
+                        <span className="font-semibold tabular-nums text-slate-900 dark:text-zinc-50">
+                          {formatMoney(amt)}{" "}
+                          <span className="text-xs font-normal text-slate-500 dark:text-zinc-500">
+                            ({pct}%)
+                          </span>
                         </span>
                       </div>
                     );
@@ -198,16 +244,25 @@ export default function SummaryClient() {
                 </div>
               </div>
             </div>
+          ) : !loading ? (
+            <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900/40">
+              <p className="text-sm font-medium text-slate-800 dark:text-zinc-200">No summary loaded</p>
+              <p className="ui-muted mt-1 text-xs">Choose a month and press Refresh, or add expenses first.</p>
+              <Link href="/expenses" className="ui-btn-primary mt-4 inline-flex text-sm">
+                Go to expenses
+              </Link>
+            </div>
           ) : null}
         </section>
 
-        <section className="rounded-2xl border border-black/5 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-zinc-950 sm:p-6">
+        <section className="ui-card">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-              Budgets (per category)
-            </h2>
+            <div>
+              <h2 className="ui-card-header normal-case">Budgets (per category)</h2>
+              <p className="ui-muted mt-1 text-xs font-normal">Enter limits and save — warnings show at 80% usage.</p>
+            </div>
             <button
-              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+              className="ui-btn-primary shrink-0 disabled:opacity-50"
               type="button"
               onClick={saveBudgets}
               disabled={loading}
@@ -227,10 +282,10 @@ export default function SummaryClient() {
               return (
                 <div
                   key={c.value}
-                  className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800"
+                  className="rounded-2xl border border-slate-200/90 bg-white p-4 transition hover:border-teal-200/50 dark:border-zinc-800 dark:bg-zinc-950/50 dark:hover:border-teal-900/40"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    <div className="text-sm font-semibold text-slate-900 dark:text-zinc-50">
                       {c.label}
                     </div>
                     <div
@@ -244,12 +299,12 @@ export default function SummaryClient() {
                     </div>
                   </div>
 
-                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-900">
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
                     <div
                       className={
                         warn
-                          ? "h-full bg-amber-500"
-                          : "h-full bg-zinc-900 dark:bg-zinc-50"
+                          ? "h-full bg-amber-500 transition-all duration-300"
+                          : "h-full bg-teal-600 transition-all duration-300 dark:bg-teal-500"
                       }
                       style={{ width: `${Math.round(pct * 100)}%` }}
                     />
@@ -265,7 +320,7 @@ export default function SummaryClient() {
                     <label className="block text-right">
                       <span className="sr-only">Limit</span>
                       <input
-                        className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-right text-sm text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+                        className="ui-input py-2 text-right text-sm"
                         inputMode="decimal"
                         placeholder="0"
                         value={budgets[c.value]}

@@ -62,3 +62,13 @@ export function yyyyMmNowLocal() {
   return `${d.getFullYear()}-${m}`;
 }
 
+/** Move calendar month in local timezone (matches `<input type="month">` semantics). */
+export function shiftCalendarMonth(yyyyMm: string, delta: number): string {
+  assertYYYYMM(yyyyMm);
+  const y = Number(yyyyMm.slice(0, 4));
+  const mo = Number(yyyyMm.slice(5, 7));
+  const d = new Date(y, mo - 1 + delta, 1);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}`;
+}
+
