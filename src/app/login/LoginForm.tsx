@@ -11,6 +11,7 @@ export default function LoginForm() {
     () => searchParams.get("callbackUrl") ?? "/",
     [searchParams],
   );
+  const justReset = searchParams.get("reset") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,6 +66,12 @@ export default function LoginForm() {
           Use the account you registered.
         </p>
 
+        {justReset ? (
+          <p className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/35 dark:text-emerald-200">
+            Password updated. Sign in with your new password.
+          </p>
+        ) : null}
+
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <label className="block">
             <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
@@ -81,8 +88,14 @@ export default function LoginForm() {
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">
-              Password
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">Password</span>
+              <a
+                className="ui-link text-xs font-medium no-underline hover:underline"
+                href="/forgot-password"
+              >
+                Forgot password?
+              </a>
             </span>
             <input
               className="ui-input mt-1.5"

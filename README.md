@@ -58,6 +58,7 @@ Open the app at your configured `NEXTAUTH_URL` (e.g. `http://localhost:3001`).
 
 - `/register` – create account
 - `/login` – sign in
+- `/forgot-password` – email magic link to `/reset-password`
 - `/dashboard` – charts + insights
 - `/expenses` – add/list/sort/delete expenses
 - `/summary` – monthly summary + budgets with 80% warning
@@ -100,6 +101,7 @@ Or in Prisma Studio: open the `User` table and set that user’s `role` to `ADMI
    DATABASE_URL="your-production-url" npx prisma migrate deploy
    ```
 4. **Redeploy** after changing env vars.
+5. **Password reset** – set `RESEND_API_KEY` (and optional `RESEND_FROM`) so “Forgot password” can send email. Without it, production returns an error; in development the reset URL is logged on the server.
 
 **Install on a phone (PWA):** After the app is live on **HTTPS**, Android Chrome can offer “Install app”. On iOS, open the site in Safari → Share → **Add to Home Screen**.
 

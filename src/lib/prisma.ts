@@ -24,7 +24,8 @@ function clientSchemaIsCurrent(client: PrismaClient): boolean {
   return (
     typeof c.categoryLearnedRule?.findMany === "function" &&
     typeof c.userCategoryRule?.findMany === "function" &&
-    typeof c.bankImportProfile?.findMany === "function"
+    typeof c.bankImportProfile?.findMany === "function" &&
+    typeof c.passwordResetToken?.findMany === "function"
   );
 }
 

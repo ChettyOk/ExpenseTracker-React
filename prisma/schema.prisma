@@ -26,6 +26,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  passwordResetTokens PasswordResetToken[]
   accounts Account[]
   sessions Session[]
   expenses Expense[]
@@ -115,6 +116,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+/// One-time password reset links (store SHA-256 of the secret token, never the raw token).
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 enum ExpenseCategory {
