@@ -205,7 +205,9 @@ export default function AppShell({
               ) : null}
             </div>
             {headerExtra ? (
-              <div className="flex shrink-0 flex-col gap-3 sm:items-end">{headerExtra}</div>
+              <div className="flex w-full min-w-0 shrink-0 flex-col items-center gap-3 sm:w-auto sm:items-end">
+                {headerExtra}
+              </div>
             ) : null}
           </div>
         ) : null}
