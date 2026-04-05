@@ -6,11 +6,11 @@ import { signOut, useSession } from "next-auth/react";
 import { useRef } from "react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/expenses", label: "Expenses" },
-  { href: "/summary", label: "Summary" },
-  { href: "/recurring", label: "Recurring" },
-  { href: "/settings/rules", label: "Import & rules" },
+  { href: "/dashboard", label: "Dashboard", icon: "📊" },
+  { href: "/expenses", label: "Expenses", icon: "💳" },
+  { href: "/summary", label: "Summary", icon: "📈" },
+  { href: "/recurring", label: "Recurring", icon: "🔁" },
+  { href: "/settings/rules", label: "Import & rules", icon: "📥" },
 ] as const;
 
 function isNavActive(pathname: string | null, href: string) {
@@ -19,12 +19,13 @@ function isNavActive(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function navLinkClass(active: boolean) {
-  const base = "rounded-lg px-2 py-1.5 text-xs font-medium";
+function desktopNavLinkClass(active: boolean) {
+  const base =
+    "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600/50 dark:focus-visible:outline-teal-400/50";
   if (active) {
-    return `${base} bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900`;
+    return `${base} border border-teal-600/25 bg-teal-600 text-white shadow-md shadow-teal-900/25 ring-2 ring-teal-400/35 dark:border-teal-400/30 dark:bg-teal-500 dark:text-zinc-950 dark:shadow-teal-950/30 dark:ring-teal-300/40`;
   }
-  return `${base} text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50`;
+  return `${base} border border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100/90 hover:text-slate-900 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-50`;
 }
 
 export type AppShellMaxWidth = "max-w-xl" | "max-w-3xl" | "max-w-5xl" | "max-w-6xl";
@@ -58,19 +59,30 @@ export default function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <header className="sticky top-0 z-40 border-b border-zinc-200/90 bg-zinc-50/95 backdrop-blur-md dark:border-zinc-800 dark:bg-black/90">
-        {/* Header is full viewport width (not tied to page contentMaxWidth) so the nav stays usable on narrow layouts. */}
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2 px-4 py-2.5 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-4 lg:px-8">
+    <div className="app-shell-bg">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/80">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2 px-4 py-3 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-4 lg:px-8">
           <Link
             href="/dashboard"
-            className="col-start-1 row-start-1 min-w-0 shrink-0 text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+            className="col-start-1 row-start-1 flex min-w-0 shrink-0 items-center gap-2.5 text-sm font-semibold tracking-tight text-slate-900 transition hover:text-teal-800 dark:text-zinc-50 dark:hover:text-teal-300"
           >
-            Expense Tracker
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-teal-700 text-xs font-bold text-white shadow-md shadow-teal-900/25 dark:from-teal-400 dark:to-teal-600 dark:text-zinc-950 dark:shadow-teal-950/40"
+              aria-hidden
+            >
+              e
+            </span>
+            <span className="leading-tight">
+              Expense
+              <span className="hidden font-normal text-slate-500 sm:inline dark:text-zinc-400">
+                {" "}
+                Tracker
+              </span>
+            </span>
           </Link>
 
           <nav
-            className="hidden min-w-0 flex-wrap items-center justify-center gap-x-0.5 gap-y-1 lg:col-start-2 lg:row-start-1 lg:flex"
+            className="hidden min-w-0 flex-wrap items-center justify-center gap-1 lg:col-start-2 lg:row-start-1 lg:flex"
             aria-label="Main"
           >
             {navItems.map((item) => {
@@ -79,8 +91,10 @@ export default function AppShell({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`whitespace-nowrap ${navLinkClass(active)}`}
+                  className={`whitespace-nowrap ${desktopNavLinkClass(active)}`}
+                  aria-current={active ? "page" : undefined}
                 >
+                  <span aria-hidden>{item.icon}</span>
                   {item.label}
                 </Link>
               );
@@ -88,10 +102,10 @@ export default function AppShell({
             {showAdmin ? (
               <Link
                 href="/admin"
-                className={`whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium ${
+                className={`whitespace-nowrap rounded-xl border-2 border-transparent px-3 py-2 text-sm font-medium transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600 ${
                   isNavActive(pathname, "/admin")
-                    ? "bg-amber-700 text-white dark:bg-amber-600"
-                    : "text-amber-800 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-950/50"
+                    ? "border-amber-500/40 bg-amber-600 text-white shadow-md shadow-amber-900/20 dark:bg-amber-500 dark:text-zinc-950"
+                    : "text-amber-900 hover:border-amber-200 hover:bg-amber-50 dark:text-amber-300 dark:hover:border-amber-900/50 dark:hover:bg-amber-950/60"
                 }`}
               >
                 Admin
@@ -101,7 +115,7 @@ export default function AppShell({
 
           <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-self-end gap-2 lg:col-start-3">
             <details ref={mobileNavRef} className="relative lg:hidden">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-xs font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 [&::-webkit-details-marker]:hidden">
+              <summary className="ui-btn-secondary flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs transition [&::-webkit-details-marker]:hidden">
                 <span className="flex h-4 w-4 flex-col justify-center gap-0.5" aria-hidden>
                   <span className="h-0.5 rounded-full bg-current" />
                   <span className="h-0.5 rounded-full bg-current" />
@@ -109,7 +123,7 @@ export default function AppShell({
                 </span>
                 Menu
               </summary>
-              <div className="absolute right-0 z-50 mt-1 w-[min(100vw-2rem,16rem)] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute right-0 z-50 mt-2 w-[min(100vw-2rem,17rem)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-2 text-sm shadow-xl shadow-slate-900/15 ring-1 ring-slate-900/5 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/40 dark:ring-white/5">
                 {navItems.map((item) => {
                   const active = isNavActive(pathname, item.href);
                   return (
@@ -117,12 +131,13 @@ export default function AppShell({
                       key={item.href}
                       href={item.href}
                       onClick={closeMobileNav}
-                      className={`block px-3 py-2 ${
+                      className={`flex items-center gap-2 px-4 py-2.5 transition ${
                         active
-                          ? "bg-zinc-100 font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
-                          : "text-zinc-700 hover:bg-zinc-50 dark:text-zinc-200 dark:hover:bg-zinc-800/80"
+                          ? "border-l-4 border-teal-500 bg-teal-50 font-semibold text-teal-900 dark:bg-teal-950/55 dark:text-teal-200"
+                          : "text-slate-700 hover:bg-slate-50 dark:text-zinc-200 dark:hover:bg-zinc-800/80"
                       }`}
                     >
+                      <span aria-hidden>{item.icon}</span>
                       {item.label}
                     </Link>
                   );
@@ -131,10 +146,10 @@ export default function AppShell({
                   <Link
                     href="/admin"
                     onClick={closeMobileNav}
-                    className={`block border-t border-zinc-100 px-3 py-2 dark:border-zinc-800 ${
+                    className={`block border-t border-slate-100 px-4 py-2.5 dark:border-zinc-800 ${
                       isNavActive(pathname, "/admin")
-                        ? "bg-amber-50 font-medium text-amber-900 dark:bg-amber-950/50 dark:text-amber-200"
-                        : "text-amber-800 hover:bg-amber-50/80 dark:text-amber-300 dark:hover:bg-amber-950/30"
+                        ? "bg-amber-50 font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                        : "text-amber-900 hover:bg-amber-50/80 dark:text-amber-300 dark:hover:bg-amber-950/25"
                     }`}
                   >
                     Admin
@@ -144,27 +159,27 @@ export default function AppShell({
             </details>
 
             <details className="relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 [&::-webkit-details-marker]:hidden">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
+              <summary className="ui-btn-secondary flex cursor-pointer list-none items-center gap-2 py-2 pl-2 pr-2.5 transition sm:pr-3 [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-slate-800 to-slate-950 text-xs font-bold text-white shadow-inner dark:from-zinc-600 dark:to-zinc-800">
                   {session?.user?.name?.[0]?.toUpperCase() ??
                     session?.user?.email?.[0]?.toUpperCase() ??
                     "U"}
                 </span>
-                <span className="hidden max-w-40 truncate sm:inline">
+                <span className="hidden max-w-32 truncate text-sm sm:inline sm:max-w-40">
                   {session?.user?.name ?? session?.user?.email ?? "Account"}
                 </span>
               </summary>
-              <div className="absolute right-0 z-50 mt-1.5 w-48 overflow-hidden rounded-xl border border-zinc-200 bg-white text-sm shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200/90 bg-white text-sm shadow-xl shadow-slate-900/15 ring-1 ring-slate-900/5 dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-black/40 dark:ring-white/5">
                 <Link
                   href="/profile"
-                  className="block px-3 py-2 text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  className="block px-4 py-2.5 text-slate-700 transition hover:bg-slate-50 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   Profile settings
                 </Link>
                 <button
                   type="button"
                   onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="block w-full px-3 py-2 text-left text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  className="block w-full px-4 py-2.5 text-left text-slate-700 transition hover:bg-slate-50 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   Log out
                 </button>
@@ -175,16 +190,18 @@ export default function AppShell({
       </header>
 
       <main
-        className={`mx-auto w-full space-y-6 px-4 py-8 sm:px-6 lg:px-8 ${contentMaxWidth}`}
+        className={`mx-auto w-full space-y-10 px-4 py-8 sm:px-6 sm:py-10 lg:px-8 ${contentMaxWidth}`}
       >
         {!hidePageHeader ? (
-          <div className="flex flex-col gap-4 border-b border-zinc-200 pb-6 dark:border-zinc-800 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-10 dark:border-zinc-800/80 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl dark:text-zinc-50">
                 {title}
               </h1>
               {description ? (
-                <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{description}</div>
+                <div className="max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
+                  {description}
+                </div>
               ) : null}
             </div>
             {headerExtra ? (

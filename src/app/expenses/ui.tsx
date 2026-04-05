@@ -531,7 +531,7 @@ export default function ExpensesClient() {
       description={
         <>
           Filter, edit, export, and import from CSV or PDF. Category changes teach future imports.{" "}
-          <Link className="font-medium underline" href="/settings/rules">
+          <Link className="ui-link text-sm" href="/settings/rules">
             Bank profiles &amp; rules
           </Link>
         </>
@@ -541,7 +541,7 @@ export default function ExpensesClient() {
           <label className="block w-full min-w-48 text-sm sm:w-auto">
             <span className="font-medium text-zinc-700 dark:text-zinc-300">CSV bank profile</span>
             <select
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+              className="ui-input mt-1.5"
               value={selectedProfileId}
               onChange={(e) => setSelectedProfileId(e.target.value)}
             >
@@ -555,14 +555,14 @@ export default function ExpensesClient() {
           </label>
           <div className="flex flex-wrap justify-end gap-2">
             <button
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-white/5"
+              className="ui-btn-secondary px-3 py-2 text-sm"
               type="button"
               onClick={() => void onExportCsv()}
             >
               Download CSV
             </button>
             <button
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-white/5"
+              className="ui-btn-secondary px-3 py-2 text-sm disabled:opacity-50"
               disabled={importBusy}
               type="button"
               onClick={() => previewFileRef.current?.click()}
@@ -570,7 +570,7 @@ export default function ExpensesClient() {
                 Preview import
             </button>
             <button
-              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-white/5"
+              className="ui-btn-secondary px-3 py-2 text-sm disabled:opacity-50"
               disabled={importBusy}
               type="button"
               onClick={() => quickFileRef.current?.click()}

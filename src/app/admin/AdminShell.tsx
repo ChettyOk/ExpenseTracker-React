@@ -16,39 +16,38 @@ export default function AdminShell({
   description,
 }: AdminShellProps) {
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="app-shell-bg min-h-screen">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <div className="mb-10 flex flex-col gap-4 border-b border-slate-200/80 pb-8 dark:border-zinc-800/80 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0 space-y-2">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-400">
+              <span aria-hidden>⚙️</span> Administrator
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl dark:text-zinc-50">
               {title}
             </h1>
-            {description && (
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            {description ? (
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-zinc-400">
                 {description}
               </p>
-            )}
+            ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/dashboard"
-              className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link href="/dashboard" className="ui-btn-secondary text-sm">
               User app
             </Link>
             <button
               type="button"
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="ui-btn-primary bg-slate-800 text-white shadow-slate-900/20 hover:bg-slate-900 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200"
             >
               Log out
             </button>
           </div>
         </div>
         <AdminNav />
-        {children}
+        <div className="space-y-10">{children}</div>
       </div>
     </div>
   );
 }
-

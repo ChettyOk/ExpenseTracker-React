@@ -87,19 +87,14 @@ export default function AdminAllExpenses() {
   }, [load]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Filters
-        </h2>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-zinc-500">User</span>
-            <select
-              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            >
+    <div className="space-y-6">
+      <div className="ui-card">
+        <h2 className="ui-card-header normal-case">Filters</h2>
+        <p className="ui-muted mt-1 text-sm font-normal">Narrow the global expense list before exporting or reviewing.</p>
+        <div className="mt-5 flex flex-wrap items-end gap-4">
+          <label className="block min-w-44">
+            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">User</span>
+            <select className="ui-input mt-1.5" value={userId} onChange={(e) => setUserId(e.target.value)}>
               <option value="">All</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
@@ -108,13 +103,9 @@ export default function AdminAllExpenses() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-zinc-500">Category</span>
-            <select
-              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
+          <label className="block min-w-36">
+            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">Category</span>
+            <select className="ui-input mt-1.5" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">All</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
@@ -123,20 +114,20 @@ export default function AdminAllExpenses() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-zinc-500">From</span>
+          <label className="block min-w-40">
+            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">From</span>
             <input
               type="date"
-              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="ui-input mt-1.5 dark:[&::-webkit-calendar-picker-indicator]:opacity-80"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
           </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-zinc-500">To</span>
+          <label className="block min-w-40">
+            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">To</span>
             <input
               type="date"
-              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-50"
+              className="ui-input mt-1.5 dark:[&::-webkit-calendar-picker-indicator]:opacity-80"
               value={to}
               onChange={(e) => setTo(e.target.value)}
             />
@@ -144,30 +135,30 @@ export default function AdminAllExpenses() {
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+      {error ? (
+        <p className="rounded-xl border border-red-200/80 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/35 dark:text-red-200">
           {error}
         </p>
-      )}
+      ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-[var(--surface-elevated)] shadow-sm ring-1 ring-slate-900/[0.02] dark:border-white/[0.07] dark:bg-zinc-950 dark:ring-white/[0.03]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-                <th className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+              <tr className="border-b border-slate-200 bg-slate-50/90 dark:border-zinc-800 dark:bg-zinc-900/50">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                   User
                 </th>
-                <th className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                   Amount
                 </th>
-                <th className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                   Category
                 </th>
-                <th className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                   Date
                 </th>
-                <th className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                   Description
                 </th>
               </tr>
@@ -175,35 +166,38 @@ export default function AdminAllExpenses() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
-                    Loading…
+                  <td colSpan={5} className="px-4 py-8">
+                    <div className="space-y-2">
+                      <div className="ui-skeleton h-10 w-full rounded-lg" />
+                      <div className="ui-skeleton h-10 w-full rounded-lg" />
+                      <div className="ui-skeleton h-10 w-full rounded-lg" />
+                    </div>
                   </td>
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
-                    No expenses match your filters.
+                  <td colSpan={5} className="px-4 py-12">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-slate-800 dark:text-zinc-200">No expenses match</p>
+                      <p className="ui-muted mt-1 text-xs">Adjust filters or pick another user.</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 expenses.map((e) => (
                   <tr
                     key={e.id}
-                    className="border-b border-zinc-100 dark:border-zinc-800"
+                    className="border-b border-slate-100 transition hover:bg-slate-50/50 dark:border-zinc-800 dark:hover:bg-zinc-900/40"
                   >
-                    <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">
+                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-zinc-50">
                       {e.userName || e.userEmail}
                     </td>
-                    <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">
+                    <td className="px-4 py-3 tabular-nums font-semibold text-slate-900 dark:text-zinc-50">
                       {formatMoney(e.amount)}
                     </td>
-                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                      {e.category}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                      {e.date}
-                    </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-zinc-600 dark:text-zinc-400">
+                    <td className="px-4 py-3 text-slate-600 dark:text-zinc-400">{e.category}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-zinc-400">{e.date}</td>
+                    <td className="max-w-xs truncate px-4 py-3 text-slate-600 dark:text-zinc-400">
                       {e.description ?? "—"}
                     </td>
                   </tr>
@@ -213,8 +207,8 @@ export default function AdminAllExpenses() {
           </table>
         </div>
         {!loading && totalCount > PAGE ? (
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800">
-            <span className="text-zinc-600 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 px-4 py-3 text-sm dark:border-zinc-800">
+            <span className="text-slate-600 dark:text-zinc-400">
               {totalCount === 0 ? 0 : offset + 1}–{Math.min(offset + expenses.length, totalCount)} of{" "}
               {totalCount.toLocaleString()}
             </span>
@@ -222,7 +216,7 @@ export default function AdminAllExpenses() {
               <button
                 type="button"
                 disabled={offset === 0}
-                className="rounded border border-zinc-300 px-3 py-1 text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="ui-btn-secondary px-3 py-1.5 text-sm disabled:opacity-40"
                 onClick={() => void load(Math.max(0, offset - PAGE))}
               >
                 Previous
@@ -230,7 +224,7 @@ export default function AdminAllExpenses() {
               <button
                 type="button"
                 disabled={offset + PAGE >= totalCount}
-                className="rounded border border-zinc-300 px-3 py-1 text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="ui-btn-secondary px-3 py-1.5 text-sm disabled:opacity-40"
                 onClick={() => void load(offset + PAGE)}
               >
                 Next

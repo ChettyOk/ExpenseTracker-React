@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import AppShell from "@/components/AppShell";
+import { shiftCalendarMonth } from "@/lib/month";
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
   Line,
   LineChart,
   Pie,
@@ -14,6 +19,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+const PIE_COLORS = [
+  "#0d9488",
+  "#14b8a6",
+  "#0f766e",
+  "#2dd4bf",
+  "#115e59",
+  "#5eead4",
+  "#94a3b8",
+];
+
+const CHART_GRID = "rgb(148 163 184 / 0.35)";
 
 type ExpenseCategory =
   | "FOOD"
@@ -34,10 +51,78 @@ const categories: { value: ExpenseCategory; label: string }[] = [
   { value: "OTHER", label: "Other" },
 ];
 
+const quickActions = [
+  {
+    href: "/expenses",
+    icon: "💳",
+    title: "Expenses",
+    desc: "Track and manage your spending.",
+  },
+  {
+    href: "/summary",
+    icon: "📈",
+    title: "Summary",
+    desc: "Totals by category and budget limits.",
+  },
+  {
+    href: "/recurring",
+    icon: "🔁",
+    title: "Recurring",
+    desc: "Automate subscriptions and fixed bills.",
+  },
+  {
+    href: "/settings/rules",
+    icon: "📥",
+    title: "Import & rules",
+    desc: "CSV/PDF import and smart categorization.",
+  },
+];
+
 function yyyyMmNow() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   return `${d.getFullYear()}-${m}`;
+}
+
+function formatMonthReadable(yyyyMm: string) {
+  const [y, m] = yyyyMm.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return yyyyMm;
+  const d = new Date(y, m - 1, 1);
+  if (Number.isNaN(d.getTime())) return yyyyMm;
+  return d.toLocaleString(undefined, { month: "long", year: "numeric" });
+}
+
+function shortTrendMonth(yyyyMm: string) {
+  const [y, m] = yyyyMm.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return yyyyMm;
+  const d = new Date(y, m - 1, 1);
+  return d.toLocaleString(undefined, { month: "short", year: "2-digit" });
+}
+
+function categoryTitle(c: ExpenseCategory) {
+  return categories.find((x) => x.value === c)?.label ?? c;
+}
+
+function RefreshGlyph(props: { className?: string }) {
+  return (
+    <svg
+      className={props.className}
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 21h5v-5" />
+    </svg>
+  );
 }
 
 function formatMoney(n: number) {
@@ -73,6 +158,51 @@ export default function DashboardClient() {
       return { name: c.label, value: entry?.amount ?? 0 };
     });
   }, [summary]);
+
+  const pieDisplay = useMemo(() => pieData.filter((p) => p.value > 0), [pieData]);
+  const pieEmpty = pieDisplay.length === 0;
+
+  const trendsNumeric = useMemo(
+    () => trends.map((t) => ({ ...t, total: Number(t.total) })),
+    [trends],
+  );
+  const trendsAllZero = trendsNumeric.length === 0 || trendsNumeric.every((t) => t.total === 0);
+
+  const barData = useMemo(() => {
+    return budgetRows.map((b) => ({
+      name: categories.find((c) => c.value === b.category)?.label ?? b.category,
+      budget: b.limit,
+      spent: summary?.perCategory.find((x) => x.category === b.category)?.amount ?? 0,
+    }));
+  }, [budgetRows, summary]);
+
+  const insightCards = useMemo(() => {
+    if (loading || !summary) return [];
+    if (insights.length > 0) return insights.slice(0, 6);
+
+    if (summary.total === 0) {
+      return [
+        "No spending recorded this month yet.",
+        "Import a bank CSV or add an expense to see trends and charts fill in.",
+        "Tip: set budgets on Summary so you can track progress at a glance.",
+      ];
+    }
+
+    const sorted = [...summary.perCategory].sort((a, b) => b.amount - a.amount);
+    const top = sorted[0];
+    const lines: string[] = [];
+    if (top && top.amount > 0) {
+      lines.push(
+        `You typically spend the most on ${categoryTitle(top.category)} (${formatMoney(top.amount)}) this month.`,
+      );
+    }
+    if (budgetRows.length === 0) {
+      lines.push("Set a budget on Summary to compare actual spending against your plan.");
+    } else {
+      lines.push("Review the budget vs actual chart to spot categories nearing their limit.");
+    }
+    return lines;
+  }, [insights, summary, loading, budgetRows.length]);
 
   async function load() {
     setLoading(true);
@@ -142,113 +272,230 @@ export default function DashboardClient() {
       title="Dashboard"
       description="Category distribution, trends, and quick insights."
       headerExtra={
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Month</span>
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              className="ui-btn-secondary !px-3 !py-2 transition active:scale-95"
+              onClick={() => setMonth((m) => shiftCalendarMonth(m, -1))}
+              aria-label="Previous month"
+            >
+              ‹
+            </button>
+            <span
+              className="min-w-[11rem] text-center text-base font-bold tabular-nums text-slate-900 dark:text-zinc-100"
+              aria-live="polite"
+            >
+              {formatMonthReadable(month)}
+            </span>
+            <button
+              type="button"
+              className="ui-btn-secondary !px-3 !py-2 transition active:scale-95"
+              onClick={() => setMonth((m) => shiftCalendarMonth(m, 1))}
+              aria-label="Next month"
+            >
+              ›
+            </button>
+            <label className="sr-only" htmlFor="dashboard-month">
+              Jump to month
+            </label>
             <input
-              className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              id="dashboard-month"
+              className="ui-input max-w-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
+              aria-label="Jump to month"
             />
-          </label>
+          </div>
           <button
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200"
+            className="ui-btn-secondary inline-flex items-center justify-center gap-2 disabled:pointer-events-none disabled:opacity-50"
             type="button"
             onClick={() => void load()}
             disabled={loading}
           >
-            {loading ? "Loading..." : "Refresh"}
+            <RefreshGlyph className={`shrink-0 ${loading ? "motion-safe:animate-spin" : ""}`} />
+            {loading ? "Loading…" : "Refresh"}
           </button>
         </div>
       }
     >
-        {error ? (
-          <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
-            {error}
-          </p>
-        ) : null}
+      {error ? (
+        <p className="rounded-xl border border-red-200/80 bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/35 dark:text-red-200">
+          {error}
+        </p>
+      ) : null}
 
-        <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Total spending ({month})
-            </div>
-            <div className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {summary ? formatMoney(summary.total) : "—"}
-            </div>
-            <p className="mt-3 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-              Quick links
+      <section className="ui-card">
+        <p className="ui-label-cap">Total spending</p>
+        <p className="ui-muted mt-1 text-xs font-medium normal-case tracking-normal">
+          {formatMonthReadable(month)}
+        </p>
+        <div className="mt-4 sm:mt-5">
+          {loading && !summary ? (
+            <div className="ui-skeleton h-16 w-[min(100%,28rem)] sm:h-20 md:h-24 lg:h-28" />
+          ) : (
+            <p className="ui-stat-hero ui-stat-hero-accent">
+              {formatMoney(summary?.total ?? 0)}
             </p>
-            <nav
-              className="mt-2 grid grid-cols-2 gap-2"
-              aria-label="Quick navigation"
-            >
-              <Link
-                href="/expenses"
-                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-center text-sm font-medium text-zinc-900 transition hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
-              >
-                Expenses
-              </Link>
-              <Link
-                href="/summary"
-                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-center text-sm font-medium text-zinc-900 transition hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
-              >
-                Summary
-              </Link>
-              <Link
-                href="/recurring"
-                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-center text-sm font-medium text-zinc-900 transition hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
-              >
-                Recurring
-              </Link>
-              <Link
-                href="/settings/rules"
-                className="flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 text-center text-sm font-medium leading-snug text-zinc-900 transition hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-900"
-              >
-                Import &amp; rules
-              </Link>
-            </nav>
-          </div>
+          )}
+        </div>
+        <p className="ui-muted mt-3 max-w-xl text-sm">
+          Your combined expenses for this calendar month. Change the month above to review history.
+        </p>
+      </section>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950 lg:col-span-2">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Monthly spending trend (12m)
-            </div>
-            <div className="mt-3 h-56">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {quickActions.map((a) => (
+          <Link
+            key={a.href}
+            href={a.href}
+            className="ui-card ui-card-interactive flex flex-col gap-2 no-underline"
+          >
+            <span className="text-2xl" aria-hidden>
+              {a.icon}
+            </span>
+            <span className="text-base font-semibold text-slate-900 dark:text-zinc-50">
+              {a.title}
+            </span>
+            <span className="ui-muted text-sm leading-snug">{a.desc}</span>
+          </Link>
+        ))}
+      </section>
+
+      <section className="ui-card">
+        <div className="ui-card-header">Monthly spending trend</div>
+        <p className="ui-muted mt-1 text-sm font-normal normal-case">Last 12 months · totals by calendar month</p>
+        <div className="relative mt-5 h-60">
+          {loading && !trends.length ? (
+            <div className="ui-skeleton absolute inset-0 rounded-xl" />
+          ) : (
+            <>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trends}>
-                  <XAxis dataKey="month" hide />
+                <LineChart data={trendsNumeric} margin={{ left: 4, right: 8, top: 8, bottom: 4 }}>
+                  <CartesianGrid stroke={CHART_GRID} strokeDasharray="4 4" vertical={false} className="dark:opacity-40" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11, fill: "currentColor" }}
+                    className="text-slate-500 dark:text-zinc-500"
+                    tickFormatter={shortTrendMonth}
+                    tickMargin={8}
+                  />
                   <YAxis hide />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="total" strokeWidth={2} dot={false} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "0.75rem",
+                      border: "1px solid rgb(226 232 240)",
+                      boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.08)",
+                    }}
+                    labelFormatter={(v) => shortTrendMonth(String(v))}
+                    formatter={(value) => [
+                      formatMoney(typeof value === "number" ? value : Number(value)),
+                      "Spent",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="var(--chart-primary)"
+                    strokeWidth={trendsAllZero ? 2 : 2.75}
+                    strokeOpacity={trendsAllZero ? 0.45 : 1}
+                    strokeDasharray={trendsAllZero ? "7 5" : undefined}
+                    dot={false}
+                    activeDot={{ r: 5, fill: "var(--chart-primary)" }}
+                    isAnimationActive={!trendsAllZero}
+                  />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          </div>
-        </section>
+              {trendsAllZero ? (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-gradient-to-t from-[var(--surface-elevated)] via-transparent to-transparent px-4 text-center dark:from-zinc-950">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200">No trend data yet</p>
+                  <p className="ui-muted max-w-xs text-xs">
+                    Add expenses over multiple months to see this line climb. Start with a CSV import or a manual entry.
+                  </p>
+                  <Link href="/expenses" className="pointer-events-auto ui-btn-primary mt-1 text-xs">
+                    Add expense
+                  </Link>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+      </section>
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Budgets vs spending ({month})
-            </div>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-              Set limits on{" "}
-              <a className="underline text-zinc-900 dark:text-zinc-50" href="/summary">
-                Summary & budgets
-              </a>
-              .
-            </p>
-            <div className="mt-3 space-y-2 text-sm">
-              {loading ? (
-                <p className="text-zinc-600 dark:text-zinc-400">Loading…</p>
-              ) : budgetRows.length === 0 ? (
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  No budgets for this month.
+      <section className="grid gap-5 lg:grid-cols-2">
+        <div className="ui-card">
+          <div className="ui-card-header">Budget vs actual</div>
+          <p className="ui-muted mt-1 text-sm font-normal normal-case">
+            Compare spending to limits you set on{" "}
+            <Link href="/summary" className="ui-link text-sm font-medium no-underline hover:underline">
+              Summary
+            </Link>
+            .
+          </p>
+
+          {loading ? (
+            <div className="ui-skeleton mt-5 h-56 rounded-xl" />
+          ) : budgetRows.length === 0 ? (
+            <div className="relative mt-5">
+              <div className="pointer-events-none h-56 opacity-35">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: "—", budget: 1, spent: 0 },
+                      { name: "·", budget: 1, spent: 0 },
+                    ]}
+                    margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+                  >
+                    <CartesianGrid stroke={CHART_GRID} strokeDasharray="4 4" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <YAxis hide domain={[0, 1]} />
+                    <Bar dataKey="budget" fill="rgb(148 163 184 / 0.35)" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                    <Bar dataKey="spent" fill="rgb(45 212 191 / 0.25)" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl bg-slate-50/92 p-5 text-center dark:bg-zinc-950/92">
+                <span className="text-3xl" aria-hidden>
+                  📊
+                </span>
+                <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                  No budgets for {formatMonthReadable(month)}
                 </p>
-              ) : (
-                budgetRows.map((b) => {
+                <p className="ui-muted max-w-sm text-xs">
+                  Budgets unlock this chart. Set limits per category to track progress all month.
+                </p>
+                <Link href="/summary" className="ui-btn-primary text-sm">
+                  Create your first budget
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mt-5 h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} margin={{ left: 4, right: 8, top: 8, bottom: 28 }}>
+                    <CartesianGrid stroke={CHART_GRID} strokeDasharray="4 4" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={48} />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)}
+                      width={40}
+                    />
+                    <Tooltip
+                      formatter={(v) => formatMoney(typeof v === "number" ? v : Number(v))}
+                      contentStyle={{
+                        borderRadius: "0.75rem",
+                        border: "1px solid rgb(226 232 240)",
+                      }}
+                    />
+                    <Bar dataKey="budget" name="Budget" fill="rgb(148 163 184 / 0.75)" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    <Bar dataKey="spent" name="Spent" fill="var(--chart-primary)" radius={[4, 4, 0, 0]} maxBarSize={36} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2 border-t border-slate-200/80 pt-4 dark:border-zinc-800">
+                {budgetRows.map((b) => {
                   const spent =
                     summary?.perCategory.find((x) => x.category === b.category)?.amount ?? 0;
                   const pct = b.limit > 0 ? spent / b.limit : 0;
@@ -257,17 +504,19 @@ export default function DashboardClient() {
                   return (
                     <div
                       key={b.category}
-                      className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800"
+                      className="rounded-xl border border-slate-200/90 bg-slate-50/50 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900/30"
                     >
-                      <div className="flex justify-between gap-2 font-medium text-zinc-900 dark:text-zinc-50">
-                        <span>{categories.find((c) => c.value === b.category)?.label}</span>
-                        <span className="tabular-nums">
+                      <div className="flex justify-between gap-2 text-sm">
+                        <span className="font-medium text-slate-900 dark:text-zinc-50">
+                          {categories.find((c) => c.value === b.category)?.label}
+                        </span>
+                        <span className="tabular-nums font-semibold text-slate-800 dark:text-zinc-100">
                           {formatMoney(spent)} / {formatMoney(b.limit)}
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
                         <div
-                          className={`h-full rounded-full ${over ? "bg-red-500" : warn ? "bg-amber-500" : "bg-emerald-500"}`}
+                          className={`h-full rounded-full transition-all duration-300 ${over ? "bg-red-500" : warn ? "bg-amber-500" : "bg-teal-500"}`}
                           style={{ width: `${Math.min(100, pct * 100)}%` }}
                         />
                       </div>
@@ -282,79 +531,163 @@ export default function DashboardClient() {
                       ) : null}
                     </div>
                   );
-                })
-              )}
-            </div>
-          </div>
+                })}
+              </div>
+            </>
+          )}
+        </div>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Recurring vs actual ({month})
+        <div className="ui-card">
+          <div className="ui-card-header">Recurring vs actual</div>
+          <p className="ui-muted mt-1 text-sm font-normal normal-case">
+            Active rules vs expenses this month that came from those rules.
+          </p>
+          {loading && !recurringVs ? (
+            <div className="mt-5 space-y-3">
+              <div className="ui-skeleton h-6 w-full" />
+              <div className="ui-skeleton h-6 w-5/6" />
+              <div className="ui-skeleton h-8 w-full" />
             </div>
-            <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-              Expected total from active recurring rules vs expenses generated from those rules this
-              month.
-            </p>
-            <dl className="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+          ) : (
+            <dl className="mt-5 space-y-3 text-sm">
               <div className="flex justify-between gap-2">
-                <dt>Expected (active rules)</dt>
-                <dd className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                <dt className="text-slate-600 dark:text-zinc-400">Expected (active rules)</dt>
+                <dd className="font-bold tabular-nums text-slate-900 dark:text-zinc-50">
                   {recurringVs ? formatMoney(recurringVs.expectedRecurringTotal) : "—"}
                 </dd>
               </div>
               <div className="flex justify-between gap-2">
-                <dt>Logged from recurring</dt>
-                <dd className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                <dt className="text-slate-600 dark:text-zinc-400">Logged from recurring</dt>
+                <dd className="font-bold tabular-nums text-slate-900 dark:text-zinc-50">
                   {recurringVs ? formatMoney(recurringVs.actualFromRecurring) : "—"}
                 </dd>
               </div>
-              <div className="flex justify-between gap-2 border-t border-zinc-200 pt-2 dark:border-zinc-800">
-                <dt>Total spend (month)</dt>
-                <dd className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+              <div className="flex justify-between gap-2 border-t border-slate-200 pt-3 dark:border-zinc-800">
+                <dt className="font-medium text-slate-800 dark:text-zinc-200">Total spend (month)</dt>
+                <dd className="text-base font-bold tabular-nums text-teal-700 dark:text-teal-300">
                   {recurringVs ? formatMoney(recurringVs.monthTotalSpend) : "—"}
                 </dd>
               </div>
             </dl>
-          </div>
-        </section>
+          )}
+          {!loading &&
+          recurringVs &&
+          recurringVs.expectedRecurringTotal === 0 &&
+          recurringVs.monthTotalSpend === 0 ? (
+            <div className="mt-5 rounded-xl border border-dashed border-slate-300/90 bg-slate-50/60 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
+              <p className="text-sm font-medium text-slate-800 dark:text-zinc-200">No recurring rules yet</p>
+              <p className="ui-muted mt-1 text-xs">
+                Add rent or subscriptions so expected amounts appear here automatically.
+              </p>
+              <Link href="/recurring" className="ui-btn-primary mt-3 inline-flex text-xs">
+                Set up recurring
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </section>
 
-        <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Category distribution ({month})
-            </div>
-            <div className="mt-3 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip />
-                  <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={90} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+      <section className="grid gap-5 lg:grid-cols-2">
+        <div className="ui-card">
+          <div className="ui-card-header">Category distribution</div>
+          <p className="ui-muted mt-1 text-sm font-normal normal-case">
+            Share of spending by category · {formatMonthReadable(month)}
+          </p>
+          <div className="relative mt-5 h-64">
+            {loading && !summary ? (
+              <div className="ui-skeleton absolute inset-0 rounded-xl" />
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip
+                      formatter={(v) => formatMoney(typeof v === "number" ? v : Number(v))}
+                      contentStyle={{
+                        borderRadius: "0.75rem",
+                        border: "1px solid rgb(226 232 240)",
+                      }}
+                    />
+                    {pieEmpty ? (
+                      <Pie
+                        data={[{ name: "No data", value: 1 }]}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={56}
+                        outerRadius={88}
+                        strokeWidth={0}
+                        isAnimationActive={false}
+                      >
+                        <Cell fill="rgb(148 163 184 / 0.35)" />
+                      </Pie>
+                    ) : (
+                      <Pie
+                        data={pieDisplay}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={44}
+                        outerRadius={88}
+                        strokeWidth={2}
+                        stroke="var(--surface-elevated)"
+                        paddingAngle={1}
+                      >
+                        {pieDisplay.map((_, i) => (
+                          <Cell key={`slice-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                    )}
+                  </PieChart>
+                </ResponsiveContainer>
+                {pieEmpty ? (
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200">No categories yet</p>
+                    <p className="ui-muted text-xs">
+                      Expenses appear here grouped by category (Food, Rent, …).
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
+        </div>
 
-          <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950">
-            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              Key insights
-            </div>
-            <div className="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
-              {loading ? (
-                <p className="text-zinc-600 dark:text-zinc-400">Loading…</p>
-              ) : insights.length === 0 ? (
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  Add more data to see insights.
+        <div className="ui-card">
+          <div className="ui-card-header">Insights &amp; prompts</div>
+          <p className="ui-muted mt-1 text-sm font-normal normal-case">
+            Automated tips plus helpful defaults when data is light.
+          </p>
+          <div className="mt-4 space-y-2.5">
+            {loading && insights.length === 0 && !summary ? (
+              <>
+                <div className="ui-skeleton h-14 w-full rounded-xl" />
+                <div className="ui-skeleton h-14 w-full rounded-xl" />
+              </>
+            ) : (
+              insightCards.map((x, idx) => (
+                <p
+                  key={idx}
+                  className="rounded-xl border border-slate-200/90 bg-slate-50/50 px-3 py-3 text-sm leading-relaxed text-slate-800 transition hover:border-teal-200/70 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200 dark:hover:border-teal-900/60"
+                >
+                  {x}
                 </p>
-              ) : (
-                insights.slice(0, 6).map((x, idx) => (
-                  <p key={idx} className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-                    {x}
-                  </p>
-                ))
-              )}
-            </div>
+              ))
+            )}
           </div>
-        </section>
+          {!loading && summary && summary.total === 0 ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link href="/expenses" className="ui-btn-primary text-sm">
+                Add expense
+              </Link>
+              <Link href="/settings/rules" className="ui-btn-secondary text-sm">
+                Import transactions
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </section>
     </AppShell>
   );
 }
-
