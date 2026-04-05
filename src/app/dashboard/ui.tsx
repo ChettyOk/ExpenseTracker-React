@@ -272,8 +272,8 @@ export default function DashboardClient() {
       title="Dashboard"
       description="Category distribution, trends, and quick insights."
       headerExtra={
-        <div className="flex flex-col items-stretch gap-3 sm:items-end">
-          <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex w-full max-w-full flex-col items-center gap-3 sm:w-auto sm:items-end">
+          <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-x-2 gap-y-2 sm:max-w-none sm:justify-end">
             <button
               type="button"
               className="ui-btn-secondary !px-3 !py-2 transition active:scale-95"
@@ -283,7 +283,7 @@ export default function DashboardClient() {
               ‹
             </button>
             <span
-              className="min-w-[11rem] text-center text-base font-bold tabular-nums text-slate-900 dark:text-zinc-100"
+              className="min-w-[10.5rem] text-center text-base font-bold tabular-nums text-slate-900 sm:min-w-[11rem] dark:text-zinc-100"
               aria-live="polite"
             >
               {formatMonthReadable(month)}
@@ -301,7 +301,7 @@ export default function DashboardClient() {
             </label>
             <input
               id="dashboard-month"
-              className="ui-input max-w-50 dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              className="ui-input w-full min-w-[12rem] max-w-[14rem] shrink-0 sm:w-auto dark:[&::-webkit-calendar-picker-indicator]:opacity-90 dark:[&::-webkit-calendar-picker-indicator]:invert"
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
@@ -309,7 +309,7 @@ export default function DashboardClient() {
             />
           </div>
           <button
-            className="ui-btn-secondary inline-flex items-center justify-center gap-2 disabled:pointer-events-none disabled:opacity-50"
+            className="ui-btn-secondary inline-flex items-center justify-center gap-2 self-center disabled:pointer-events-none disabled:opacity-50 sm:self-end"
             type="button"
             onClick={() => void load()}
             disabled={loading}

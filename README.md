@@ -103,8 +103,6 @@ Or in Prisma Studio: open the `User` table and set that user’s `role` to `ADMI
 
 **Install on a phone (PWA):** After the app is live on **HTTPS**, Android Chrome can offer “Install app”. On iOS, open the site in Safari → Share → **Add to Home Screen**.
 
-Store-ready **Play Store / App Store** builds need a native wrapper (e.g. Capacitor or TWA); the PWA is the supported path for “download to home screen” from this repo.
-
 ### Tests
 
 ```bash
