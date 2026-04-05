@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
@@ -13,9 +13,37 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+function appOrigin(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:3000";
+}
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appOrigin()),
   title: "Expense Tracker",
   description: "Track expenses, budgets, and recurring costs",
+  applicationName: "Expense Tracker",
+  appleWebApp: {
+    capable: true,
+    title: "Expense Tracker",
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: [{ url: "/pwa/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0d9488",
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({

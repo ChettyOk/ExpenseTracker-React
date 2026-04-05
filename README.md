@@ -89,8 +89,21 @@ Or in Prisma Studio: open the `User` table and set that user’s `role` to `ADMI
 
 ### Deployment (Vercel)
 
-- Set `DATABASE_URL`, `NEXTAUTH_SECRET`, and `NEXTAUTH_URL` in Vercel project env vars.
-- Use a hosted Postgres (e.g. Neon/Supabase) for production.
+1. **Database** – Create a hosted Postgres database (e.g. [Neon](https://neon.tech)) and copy its connection string.
+2. **Env vars** in the Vercel project (**Settings → Environment Variables**):
+   - `DATABASE_URL` – production Postgres URL (SSL).
+   - `NEXTAUTH_SECRET` – long random string (`openssl rand -base64 32`).
+   - `NEXTAUTH_URL` – your live site origin, e.g. `https://your-app.vercel.app` (must match the URL users open; no trailing path).
+   - `NEXT_PUBLIC_APP_URL` – same as `NEXTAUTH_URL` if you use a single domain (improves Open Graph / PWA `metadataBase`; optional on Vercel if `NEXTAUTH_URL` is set).
+3. **Migrations** – After the first deploy (or from CI), apply schema to production:
+   ```bash
+   DATABASE_URL="your-production-url" npx prisma migrate deploy
+   ```
+4. **Redeploy** after changing env vars.
+
+**Install on a phone (PWA):** After the app is live on **HTTPS**, Android Chrome can offer “Install app”. On iOS, open the site in Safari → Share → **Add to Home Screen**.
+
+Store-ready **Play Store / App Store** builds need a native wrapper (e.g. Capacitor or TWA); the PWA is the supported path for “download to home screen” from this repo.
 
 ### Tests
 
