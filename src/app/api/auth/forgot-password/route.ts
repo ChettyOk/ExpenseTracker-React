@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             error:
-              "Password reset email is not configured. Set RESEND_API_KEY on the server.",
+              "Password reset email is not configured. Add RESEND_API_KEY or SMTP_HOST, SMTP_USER, and SMTP_PASSWORD to your server environment.",
           },
           { status: 503 },
         );
