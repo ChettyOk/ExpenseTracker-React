@@ -43,6 +43,14 @@ export default function RecurringClient() {
   const [dayOfMonth, setDayOfMonth] = useState(1);
   const [description, setDescription] = useState("");
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editCategory, setEditCategory] = useState<ExpenseCategory>("RENT");
+  const [editDayOfMonth, setEditDayOfMonth] = useState(1);
+  const [editDescription, setEditDescription] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editSaving, setEditSaving] = useState(false);
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -89,6 +97,7 @@ export default function RecurringClient() {
   }
 
   async function toggleActive(rule: Rule) {
+    if (editingId === rule.id) return;
     const res = await fetch(`/api/recurring-expenses/${rule.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -98,6 +107,53 @@ export default function RecurringClient() {
       setError("Failed to update rule.");
       return;
     }
+    await load();
+  }
+
+  function startEdit(r: Rule) {
+    setError(null);
+    setEditingId(r.id);
+    setEditAmount(r.amount);
+    setEditCategory(r.category);
+    setEditDayOfMonth(r.dayOfMonth);
+    setEditDescription(r.description ?? "");
+    setEditIsActive(r.isActive);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditSaving(false);
+  }
+
+  async function saveEdit(ruleId: string) {
+    setError(null);
+    const amt = Number(editAmount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      setError("Amount must be a positive number.");
+      return;
+    }
+    if (editDayOfMonth < 1 || editDayOfMonth > 28) {
+      setError("Day of month must be between 1 and 28.");
+      return;
+    }
+    setEditSaving(true);
+    const res = await fetch(`/api/recurring-expenses/${ruleId}`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        amount: amt,
+        category: editCategory,
+        dayOfMonth: editDayOfMonth,
+        description: editDescription.trim() || null,
+        isActive: editIsActive,
+      }),
+    });
+    setEditSaving(false);
+    if (!res.ok) {
+      setError("Failed to save changes.");
+      return;
+    }
+    setEditingId(null);
     await load();
   }
 
@@ -207,7 +263,10 @@ export default function RecurringClient() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="ui-card-header normal-case">Your rules</h2>
-              <p className="ui-muted mt-1 text-xs font-normal">Toggle active, or generate this month&apos;s line items.</p>
+              <p className="ui-muted mt-1 text-xs font-normal">
+                Edit a rule to change amount, category, day, or description. Toggle active or generate this month&apos;s
+                line items.
+              </p>
             </div>
             <button className="ui-btn-secondary text-sm" type="button" onClick={load}>
               Refresh
@@ -268,38 +327,123 @@ export default function RecurringClient() {
                     </td>
                   </tr>
                 ) : (
-                  rules.map((r) => (
-                    <tr key={r.id} className="text-sm text-zinc-800 dark:text-zinc-200">
-                      <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
-                        <input
-                          type="checkbox"
-                          checked={r.isActive}
-                          onChange={() => toggleActive(r)}
-                        />
-                      </td>
-                      <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
-                        {r.category}
-                      </td>
-                      <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
-                        {r.dayOfMonth}
-                      </td>
-                      <td className="border-b border-zinc-100 px-3 py-2 text-right tabular-nums dark:border-zinc-900">
-                        {r.amount}
-                      </td>
-                      <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
-                        {r.description ?? "—"}
-                      </td>
-                      <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
-                        <button
-                          className="rounded-lg border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-white/5"
-                          type="button"
-                          onClick={() => remove(r.id)}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  rules.map((r) =>
+                    editingId === r.id ? (
+                      <tr key={r.id} className="text-sm text-zinc-800 dark:text-zinc-200">
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top dark:border-zinc-900">
+                          <input
+                            type="checkbox"
+                            checked={editIsActive}
+                            onChange={(e) => setEditIsActive(e.target.checked)}
+                            aria-label="Active"
+                          />
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top dark:border-zinc-900">
+                          <select
+                            className="ui-input w-full min-w-28 py-1.5 text-sm"
+                            value={editCategory}
+                            onChange={(e) => setEditCategory(e.target.value as ExpenseCategory)}
+                          >
+                            {categories.map((c) => (
+                              <option key={c.value} value={c.value}>
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top dark:border-zinc-900">
+                          <input
+                            className="ui-input w-16 py-1.5 text-sm tabular-nums"
+                            type="number"
+                            min={1}
+                            max={28}
+                            value={editDayOfMonth}
+                            onChange={(e) => setEditDayOfMonth(Number(e.target.value))}
+                            aria-label="Day of month"
+                          />
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top text-right dark:border-zinc-900">
+                          <input
+                            className="ui-input w-full min-w-20 py-1.5 text-right text-sm tabular-nums"
+                            inputMode="decimal"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            aria-label="Amount"
+                          />
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top dark:border-zinc-900">
+                          <input
+                            className="ui-input w-full min-w-32 py-1.5 text-sm"
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="Optional"
+                            aria-label="Description"
+                          />
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 align-top dark:border-zinc-900">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className="ui-btn-primary px-3 py-1.5 text-xs"
+                              type="button"
+                              disabled={editSaving}
+                              onClick={() => void saveEdit(r.id)}
+                            >
+                              {editSaving ? "Saving…" : "Save"}
+                            </button>
+                            <button
+                              className="ui-btn-secondary px-3 py-1.5 text-xs"
+                              type="button"
+                              disabled={editSaving}
+                              onClick={cancelEdit}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={r.id} className="text-sm text-zinc-800 dark:text-zinc-200">
+                        <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
+                          <input
+                            type="checkbox"
+                            checked={r.isActive}
+                            onChange={() => toggleActive(r)}
+                            aria-label={`Active: ${categories.find((c) => c.value === r.category)?.label ?? r.category}`}
+                          />
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
+                          {categories.find((c) => c.value === r.category)?.label ?? r.category}
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
+                          {r.dayOfMonth}
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 text-right tabular-nums dark:border-zinc-900">
+                          {r.amount}
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
+                          {r.description ?? "—"}
+                        </td>
+                        <td className="border-b border-zinc-100 px-3 py-2 dark:border-zinc-900">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              className="ui-btn-secondary px-3 py-1 text-xs"
+                              type="button"
+                              onClick={() => startEdit(r)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="rounded-lg border border-red-200/80 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:bg-zinc-950 dark:text-red-400 dark:hover:bg-red-950/30"
+                              type="button"
+                              onClick={() => remove(r.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )
                 )}
               </tbody>
             </table>
