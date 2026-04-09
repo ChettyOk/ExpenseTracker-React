@@ -151,6 +151,39 @@ Alternatively use **Android Studio → Settings → Build, Execution, Deployment
 5. APK output:
    `android/app/build/outputs/apk/debug/app-debug.apk`
 
+#### Getting a downloadable APK (copy-paste)
+
+Use this when you want a file you can AirDrop, upload to Drive, or sideload.
+
+**Debug APK** (no Play signing; fine for testing):
+
+```bash
+cd /path/to/ExpenseTracker-React
+export CAP_SERVER_URL="https://your-app.vercel.app"
+export JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17)"
+npm run apk:debug
+```
+
+**Your file is here:**
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+Open that folder in Finder:
+
+```bash
+open android/app/build/outputs/apk/debug
+```
+
+**Release APK** (needs `android/keystore.properties` + keystore configured in Gradle):
+
+```bash
+export CAP_SERVER_URL="https://your-app.vercel.app"
+export JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17)"
+npm run apk:release
+```
+
+Output: `android/app/build/outputs/apk/release/app-release.apk`
+
 You can also open Android Studio via:
 ```bash
 npm run cap:open:android
