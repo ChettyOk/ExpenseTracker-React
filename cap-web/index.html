@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d9488" />
+    <title>Expense Tracker</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background: linear-gradient(160deg, #f0fdfa 0%, #ccfbf1 45%, #99f6e4 100%);
+        color: #134e4a;
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background: linear-gradient(160deg, #0f172a 0%, #134e4a 50%, #115e59 100%);
+          color: #ecfdf5;
+        }
+      }
+      .wrap {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        padding: 2rem 1.5rem env(safe-area-inset-bottom);
+      }
+      .logo {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+        border-radius: 1rem;
+        box-shadow:
+          0 10px 25px -5px rgb(13 148 136 / 0.35),
+          0 4px 6px -2px rgb(13 148 136 / 0.15);
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.375rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        text-align: center;
+      }
+      p {
+        margin: 0;
+        font-size: 0.875rem;
+        opacity: 0.85;
+        text-align: center;
+        max-width: 18rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img class="logo" src="logo.png" width="96" height="96" alt="" />
+      <h1>Expense Tracker</h1>
+      <p id="hint">Loading…</p>
+    </div>
+    <script>
+      if (window.Capacitor) {
+        document.getElementById("hint").textContent = "Opening app…";
+      }
+    </script>
+  </body>
+</html>

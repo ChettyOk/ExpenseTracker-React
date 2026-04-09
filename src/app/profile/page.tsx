@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import AppShell from "@/components/AppShell";
+import { BrandLogo } from "@/components/BrandLogo";
 
 type Profile = {
   email: string;
@@ -170,6 +171,23 @@ export default function ProfilePage() {
               {saving ? "Saving…" : "Save changes"}
             </button>
           </form>
+        </section>
+
+        <section
+          className="mt-8 rounded-2xl border border-black/5 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-zinc-950"
+          aria-label="App"
+        >
+          <div className="flex items-center gap-3">
+            <BrandLogo size={40} className="h-10 w-10" />
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                Expense Tracker
+              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Version {process.env.NEXT_PUBLIC_APP_VERSION ?? "—"}
+              </p>
+            </div>
+          </div>
         </section>
     </AppShell>
   );

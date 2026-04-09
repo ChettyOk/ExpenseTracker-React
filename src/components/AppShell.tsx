@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useRef } from "react";
 
+import { BrandLogo } from "./BrandLogo";
+
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/expenses", label: "Expenses", icon: "💳" },
@@ -66,11 +68,8 @@ export default function AppShell({
             href="/dashboard"
             className="col-start-1 row-start-1 flex min-w-0 shrink-0 items-center gap-2.5 text-sm font-semibold tracking-tight text-slate-900 transition hover:text-teal-800 dark:text-zinc-50 dark:hover:text-teal-300"
           >
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-teal-700 text-xs font-bold text-white shadow-md shadow-teal-900/25 dark:from-teal-400 dark:to-teal-600 dark:text-zinc-950 dark:shadow-teal-950/40"
-              aria-hidden
-            >
-              e
+            <span className="inline-flex shrink-0" aria-hidden>
+              <BrandLogo size={32} className="h-8 w-8" />
             </span>
             <span className="leading-tight">
               Expense
