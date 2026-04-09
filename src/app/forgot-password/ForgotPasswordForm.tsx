@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { BrandLogo } from "@/components/BrandLogo";
+
 export default function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +40,8 @@ export default function ForgotPasswordForm() {
     <div className="ui-auth-shell">
       <main className="ui-auth-panel">
         <div className="mb-6 flex items-center gap-3">
-          <span
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-teal-700 text-sm font-bold text-white shadow-lg shadow-teal-900/25 dark:from-teal-400 dark:to-teal-600 dark:text-zinc-950"
-            aria-hidden
-          >
-            e
+          <span className="inline-flex shrink-0" aria-hidden>
+            <BrandLogo size={44} priority className="h-11 w-11" />
           </span>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-zinc-50">

@@ -8,12 +8,20 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "cap:sync:android": "node scripts/sync-cap-web-logo.mjs && npx cap sync android",
+    "cap:open:android": "npx cap open android",
+    "apk:debug": "node scripts/sync-cap-web-logo.mjs && npx cap sync android && bash scripts/android-gradle.sh assembleDebug",
+    "apk:release": "node scripts/sync-cap-web-logo.mjs && npx cap sync android && bash scripts/android-gradle.sh assembleRelease",
+    "aab:release": "node scripts/sync-cap-web-logo.mjs && npx cap sync android && bash scripts/android-gradle.sh bundleRelease",
+    "android:icons": "node scripts/generate-android-icons.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "test": "vitest run"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
@@ -30,6 +38,7 @@
     "recharts": "^3.8.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
@@ -40,6 +49,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "^5",

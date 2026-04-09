@@ -44,6 +44,8 @@ npm run prisma:migrate
 npm run prisma:generate
 ```
 
+**If `npm install` fails with `ETIMEDOUT` / `ECANCELED` on `read` during `prisma generate`:** the folder is often on **iCloud Drive** (e.g. `Documents`). Move the repo to a **fully local** path such as `~/Developer/ExpenseTracker-React`, then `rm -rf node_modules && npm install`. As a one-off you can run `npm install --ignore-scripts` and then `npx prisma generate` after files are local.
+
 ### 3) Start the app
 
 Run the development server:
@@ -106,7 +108,53 @@ Or in Prisma Studio: open the `User` table and set that user’s `role` to `ADMI
    - **SMTP:** `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` (optional `SMTP_PORT`, `SMTP_SECURE`, `SMTP_FROM`).  
    Without either, production returns an error; in development the reset URL is logged on the server.
 
-**Install on a phone (PWA):** After the app is live on **HTTPS**, Android Chrome can offer “Install app”. On iOS, open the site in Safari → Share → **Add to Home Screen**.
+### Mobile install options
+
+**iOS (PWA Add to Home Screen):**
+- Open your HTTPS site in **Safari** (not Chrome on iOS).
+- Tap **Share** -> **Add to Home Screen**.
+- If icon/title does not refresh, remove old shortcut and add again after a hard refresh.
+
+**Android APK (Capacitor wrapper):**
+
+Release builds (`apk:release`, `aab:release`) need **JDK 17 or newer** on your PATH. If you see “This build uses a Java 8 JVM”, install a modern JDK and point `JAVA_HOME` at it, for example on macOS:
+
+```bash
+brew install temurin@17
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+java -version   # should show 17.x
+```
+
+Alternatively use **Android Studio → Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK** and pick **Embedded JDK** or **17**.
+
+1. Set `CAP_SERVER_URL` to your deployed HTTPS app URL:
+   ```bash
+   export CAP_SERVER_URL="https://your-app.vercel.app"
+   ```
+2. Create the Android project once:
+   ```bash
+   npx cap add android
+   ```
+3. Sync web config into Android (this also copies `public/logo.png` into `cap-web/` so the **native shell** shows your logo before the remote app loads):
+   ```bash
+   npm run cap:sync:android
+   ```
+   **App icon / splash:** icons are built from `public/logo.png`. After you change that file, regenerate native assets and sync:
+   ```bash
+   npm run android:icons
+   npm run cap:sync:android
+   ```
+4. Build debug APK:
+   ```bash
+   npm run apk:debug
+   ```
+5. APK output:
+   `android/app/build/outputs/apk/debug/app-debug.apk`
+
+You can also open Android Studio via:
+```bash
+npm run cap:open:android
+```
 
 ### Tests
 
